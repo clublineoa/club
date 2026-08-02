@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>新竹西南扶輪社</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+      :root {
+        --bg: #f4f6f8;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #687385;
+        --line: #d7dde5;
+        --primary: #0f7b63;
+        --danger: #b42318;
+        --warning: #8a5a00;
+        --link: #0f5ea8;
+        --rotary-blue: #17458f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .app {
+        max-width: 720px;
+        min-height: 100vh;
+        margin: 0 auto;
+        background: var(--bg);
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 56px;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.96);
+      }
+
+      .back {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        font-size: 20px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .content {
+        padding: 16px;
+      }
+
+      .activity-brand {
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .activity-brand[hidden] {
+        display: none;
+      }
+
+      .activity-brand img {
+        display: block;
+        width: 100%;
+        height: clamp(56px, 18vw, 96px);
+        object-fit: contain;
+      }
+
+      .card {
+        margin-bottom: 14px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .card-body {
+        padding: 14px;
+      }
+
+      .event-image {
+        display: block;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        background: #e5e7eb;
+      }
+
+      .event-title {
+        margin: 0 0 8px;
+        font-size: 17px;
+        font-weight: 800;
+      }
+
+      .event-title.event-name {
+        color: var(--rotary-blue);
+      }
+
+      .event-filters {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .event-filter label {
+        margin: 0 0 5px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .meta {
+        margin: 4px 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .event-status-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .status-badge.open {
+        background: #df3340;
+        color: #ffffff;
+      }
+
+      .status-badge.neutral {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .map-link {
+        color: var(--link);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .map-link:after {
+        content: " 導航";
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .description {
+        white-space: pre-wrap;
+      }
+
+      label {
+        display: block;
+        margin: 12px 0 6px;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        min-height: 42px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--text);
+        font: inherit;
+      }
+
+      select {
+        cursor: pointer;
+      }
+
+      textarea {
+        min-height: 84px;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .registration-actions .registration-save {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+      }
+
+      .registration-actions .registration-cancel {
+        flex: 0 0 auto;
+        min-width: 86px;
+        padding: 0 12px;
+        white-space: nowrap;
+      }
+
+      .registration-actions .registration-leave {
+        flex: 0 0 auto;
+        min-width: 62px;
+        padding: 0 12px;
+        white-space: nowrap;
+      }
+
+      button {
+        min-height: 42px;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 14px;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      .primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .secondary {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--text);
+      }
+
+      .danger {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      .leave-button {
+        background: #d8891c;
+        color: #fff;
+      }
+
+      .full {
+        width: 100%;
+      }
+
+      .notice {
+        margin-bottom: 14px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--muted);
+      }
+
+      .notice.error {
+        border-color: #f3b4af;
+        background: #fff4f2;
+        color: var(--danger);
+      }
+
+      .notice.warning {
+        border-color: #f5d48b;
+        background: #fffbeb;
+        color: var(--warning);
+      }
+
+      .registration-list {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--line);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .member-status {
+        margin: 12px 0 6px;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f9fafb;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .member-status strong {
+        color: var(--text);
+      }
+
+      .leave-status {
+        margin: 12px 0 6px;
+        padding: 10px 12px;
+        border: 1px solid #f0c879;
+        border-radius: 6px;
+        background: #fff9ed;
+        color: #7c4a03;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .leave-status strong {
+        color: #7c4a03;
+      }
+
+      .attendance-status {
+        margin: 0 0 12px;
+        padding: 8px 12px;
+        border: 1px solid #d5e3de;
+        border-radius: 6px;
+        background: #f4faf7;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        text-align: center;
+      }
+
+      .attendance-status strong {
+        color: var(--text);
+      }
+
+      input.identity-count {
+        text-align: center;
+      }
+
+      input.identity-count::placeholder {
+        color: #9aa3af;
+        opacity: 1;
+        text-align: center;
+      }
+
+      .small {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .empty {
+        padding: 40px 16px;
+        text-align: center;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <button id="backBtn" class="back" type="button" hidden onclick="goEvents()">‹</button>
+        <h1 id="pageTitle" class="title">社團活動報名</h1>
+      </header>
+      <div id="activityBrand" class="activity-brand" hidden>
+        <img
+          src="https://cdn.phototourl.com/free/2026-07-17-2b664617-4aea-4183-8244-c802d64bde7f.jpg"
+          alt="Rotary"
+          referrerpolicy="no-referrer"
+        >
+      </div>
+      <section id="view" class="content">
+        <div class="notice">載入中...</div>
+      </section>
+    </main>
+
+    <script>
+      const APP_CONFIG = {
+        liffId: "",
+        apiUrl: ""
+      };
+      const EVENT_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
+      const EVENT_DETAIL_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+      const initialEventPeriod = getTaipeiYearMonth();
+
+      let idToken = "";
+      let currentLineUserId = "";
+      let currentPage = new URLSearchParams(location.search).get("page") || "events";
+      let currentEventId = new URLSearchParams(location.search).get("eventId") || "";
+      let currentDirectoryMemberKey = new URLSearchParams(location.search).get("memberKey") || "";
+      let currentMember = null;
+      let clubShareMessages = [];
+      let personalShareMessages = [];
+      let eventCatalog = [];
+      let eventYearFilter = String(initialEventPeriod.year);
+      let eventMonthFilter = String(initialEventPeriod.month);
+      const eventDetailRequests = {};
+
+      document.addEventListener("DOMContentLoaded", init);
+
+      async function init() {
+        try {
+          if (!APP_CONFIG.apiUrl || APP_CONFIG.apiUrl.indexOf("PASTE_") === 0) {
+            renderError("尚未設定 API_URL。請把 Apps Script Web App URL 填到 index.html 的 APP_CONFIG.apiUrl。");
+            return;
+          }
+
+          setView(`<div class="notice">正在連結Google資料庫，安全驗證中，請稍後...</div>`);
+          await liff.init({ liffId: APP_CONFIG.liffId });
+
+          if (!liff.isLoggedIn()) {
+            setView(`<div class="notice">正在前往 LINE 登入...</div>`);
+            liff.login({ redirectUri: location.href });
+            return;
+          }
+
+          setView(`<div class="notice">正在取得 LINE 身分...</div>`);
+          idToken = liff.getIDToken();
+          if (!idToken) {
+            renderError("無法取得 LINE ID Token。請確認 LIFF scope 有勾選 openid。");
+            return;
+          }
+          const decodedToken = typeof liff.getDecodedIDToken === "function"
+            ? liff.getDecodedIDToken()
+            : null;
+          currentLineUserId = decodedToken && decodedToken.sub ? String(decodedToken.sub) : "";
+
+          if (currentPage === "verify") {
+            await renderVerify();
+          } else if (currentPage === "shareClub") {
+            await renderClubShare();
+          } else if (currentPage === "shareProfile") {
+            await renderPersonalShare();
+          } else if (currentPage === "shareDirectoryProfile" && currentDirectoryMemberKey) {
+            await renderDirectoryProfileShare();
+          } else if (currentPage === "shareExecutiveSecretary") {
+            await renderExecutiveSecretaryShare();
+          } else if (currentPage === "event" && currentEventId) {
+            await renderEvent(currentEventId);
+          } else {
+            await renderEvents();
+          }
+        } catch (err) {
+          renderError(errorText(err));
+        }
+      }
+
+      async function renderVerify() {
+        setTitle("社友/寶眷/執行秘書驗證", false);
+        setView(`<div class="notice">檢查身分綁定狀態...</div>`);
+
+        const state = await api("getMemberState", { idToken });
+        if (!state.ok) {
+          renderError(state.message);
+          return;
+        }
+
+        if (state.bound) {
+          currentMember = state.member;
+          setView(`
+            <div class="notice">
+              <strong>${escapeHtml(state.member.name)}</strong>，您已完成身分驗證，歡迎加入「${escapeHtml(state.clubName || "本社團")}」官方帳號。
+              <div class="small">驗證手機: ${escapeHtml(state.member.phone || "")}</div>
+            </div>
+            <button class="primary full" type="button" onclick="goEvents()">查看活動列表</button>
+          `);
+          return;
+        }
+
+        setView(`
+          <div class="card">
+            <div class="card-body">
+              <p class="meta">請輸入社團通訊錄或執行秘書資訊中的手機完整號碼。</p>
+              <label for="memberPhone">手機完整號碼</label>
+              <input id="memberPhone" inputmode="tel" autocomplete="tel" placeholder="例如：0912345678">
+              <div class="actions">
+                <button class="primary full" type="button" onclick="submitVerify()">完成驗證</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      async function submitVerify() {
+        const phone = document.getElementById("memberPhone").value;
+        setView(`<div class="notice">驗證中...</div>`);
+
+        const result = await api("bindMember", { idToken, phone });
+        if (!result.ok) {
+          setView(`
+            <div class="notice error">${escapeHtml(result.message)}</div>
+            <button class="secondary full" type="button" onclick="renderVerify()">重新輸入</button>
+          `);
+          return;
+        }
+
+        currentMember = result.member;
+        setView(`
+          <div class="notice">
+            <strong>${escapeHtml(result.member.name)}</strong>，您已完成身分驗證，歡迎加入「${escapeHtml(result.clubName || "本社團")}」官方帳號。
+            <div class="small">驗證手機: ${escapeHtml(result.member.phone || "")}</div>
+          </div>
+          <button class="primary full" type="button" onclick="goEvents()">查看活動列表</button>
+        `);
+      }
+
+      async function renderEvents() {
+        setTitle("活動列表", false);
+        const cached = readEventCache();
+        if (cached) {
+          renderEventCatalog(cached.member, cached.events);
+          scheduleEventDetailPrefetch(cached.events);
+        } else {
+          setView(`<div class="notice">載入活動中...</div>`);
+        }
+
+        let result;
+        try {
+          result = await api("listEvents", { idToken });
+        } catch (err) {
+          if (cached) {
+            return;
+          }
+          throw err;
+        }
+        if (!result.ok) {
+          clearEventCache();
+          renderNeedVerifyOrError(result);
+          return;
+        }
+
+        const freshEvents = result.events || [];
+        writeEventCache(result.member, freshEvents);
+        currentMember = result.member;
+        scheduleEventDetailPrefetch(freshEvents);
+        if (cached && eventCatalogsMatch(cached.events, freshEvents)) {
+          return;
+        }
+        renderEventCatalog(result.member, freshEvents);
+      }
+
+      function renderEventCatalog(member, events) {
+        currentMember = member;
+        eventCatalog = sortEventsForDisplay(events || []);
+        if (!eventCatalog.length) {
+          setView(`<div class="empty">目前沒有可顯示的活動。</div>`);
+          return;
+        }
+
+        const yearValues = eventCatalog
+          .map(event => parseEventDateParts(event.dateText).year)
+          .filter(Boolean);
+        const selectedYear = parseInt(eventYearFilter, 10);
+        if (Number.isFinite(selectedYear)) yearValues.push(selectedYear);
+        const years = [...new Set(yearValues)]
+          .sort((a, b) => b - a);
+        const yearOptions = years.map(year => `
+          <option value="${year}" ${String(year) === eventYearFilter ? "selected" : ""}>${year}年</option>
+        `).join("");
+        const monthOptions = Array.from({ length: 12 }, (_, index) => index + 1).map(month => `
+          <option value="${month}" ${String(month) === eventMonthFilter ? "selected" : ""}>${month}月</option>
+        `).join("");
+
+        setView(`
+          <div class="event-filters" aria-label="活動篩選">
+            <div class="event-filter">
+              <label for="eventYearFilter">年份</label>
+              <select id="eventYearFilter" onchange="applyEventFilters()">
+                <option value="all" ${eventYearFilter === "all" ? "selected" : ""}>全部年份</option>
+                ${yearOptions}
+              </select>
+            </div>
+            <div class="event-filter">
+              <label for="eventMonthFilter">月份</label>
+              <select id="eventMonthFilter" onchange="applyEventFilters()">
+                <option value="all" ${eventMonthFilter === "all" ? "selected" : ""}>全部月份</option>
+                ${monthOptions}
+              </select>
+            </div>
+          </div>
+          <div id="eventList"></div>
+        `);
+        applyEventFilters();
+      }
+
+      function eventCatalogsMatch(cachedEvents, freshEvents) {
+        try {
+          return JSON.stringify(cachedEvents || []) === JSON.stringify(freshEvents || []);
+        } catch (err) {
+          return false;
+        }
+      }
+
+      function readEventCache() {
+        const key = eventCacheKey();
+        if (!key) return null;
+
+        try {
+          const cached = JSON.parse(localStorage.getItem(key) || "null");
+          if (!cached || !cached.savedAt || !Array.isArray(cached.events)) return null;
+          if (Date.now() - cached.savedAt > EVENT_CACHE_MAX_AGE_MS) {
+            localStorage.removeItem(key);
+            return null;
+          }
+          return cached;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function writeEventCache(member, events) {
+        const key = eventCacheKey();
+        if (!key) return;
+
+        try {
+          localStorage.setItem(key, JSON.stringify({
+            savedAt: Date.now(),
+            member: member || null,
+            events: events || []
+          }));
+        } catch (err) {
+          // Some in-app browsers can disable persistent storage.
+        }
+      }
+
+      function clearEventCache() {
+        const key = eventCacheKey();
+        if (!key) return;
+        try {
+          localStorage.removeItem(key);
+        } catch (err) {
+          // Ignore unavailable browser storage.
+        }
+      }
+
+      function eventCacheKey() {
+        if (!currentLineUserId) return "";
+        return "club_events_v3:" + APP_CONFIG.liffId + ":" + currentLineUserId;
+      }
+
+      function applyEventFilters() {
+        const yearSelect = document.getElementById("eventYearFilter");
+        const monthSelect = document.getElementById("eventMonthFilter");
+        if (yearSelect) eventYearFilter = yearSelect.value;
+        if (monthSelect) eventMonthFilter = monthSelect.value;
+
+        const filteredEvents = eventCatalog.filter(event => {
+          const parts = parseEventDateParts(event.dateText);
+          const matchesYear = eventYearFilter === "all" || String(parts.year) === eventYearFilter;
+          const matchesMonth = eventMonthFilter === "all" || String(parts.month) === eventMonthFilter;
+          return matchesYear && matchesMonth;
+        });
+        const list = document.getElementById("eventList");
+        if (!list) return;
+
+        if (!filteredEvents.length) {
+          list.innerHTML = `<div class="empty">這個年月目前沒有可顯示的活動。</div>`;
+          return;
+        }
+        list.innerHTML = renderEventCards(filteredEvents);
+      }
+
+      function renderEventCards(events) {
+        return events.map(event => `
+          <article class="card">
+            ${renderEventImage(event.imageUrl)}
+            <div class="card-body">
+              <h2 class="event-title event-name">${escapeHtml(event.title)}</h2>
+              <p class="meta">${escapeHtml(event.dateText)} ${escapeHtml(event.timeText)}</p>
+              <p class="meta">${escapeHtml(event.location)}</p>
+              ${renderEventStatus(event.status)}
+              <button class="primary full" type="button" onclick="goEvent('${escapeJs(event.eventId)}')">
+                ${event.status === "開放報名" ? "查看 / 報名" : "查看活動"}
+              </button>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function sortEventsForDisplay(events) {
+        return events.slice().sort((a, b) => {
+          const rankA = eventStatusRank(a.status);
+          const rankB = eventStatusRank(b.status);
+          if (rankA !== rankB) return rankA - rankB;
+
+          const timeA = eventDateTimestamp(a);
+          const timeB = eventDateTimestamp(b);
+          const validTimeA = Number.isFinite(timeA);
+          const validTimeB = Number.isFinite(timeB);
+          if (validTimeA !== validTimeB) return validTimeA ? -1 : 1;
+          if (timeA !== timeB) {
+            return rankA < 2 ? timeA - timeB : timeB - timeA;
+          }
+          return String(a.title || "").localeCompare(String(b.title || ""), "zh-Hant");
+        });
+      }
+
+      function eventStatusRank(status) {
+        if (status === "開放報名") return 0;
+        if (status === "尚未開放") return 1;
+        return 2;
+      }
+
+      function eventDateTimestamp(event) {
+        const parts = parseEventDateParts(event.dateText);
+        if (!parts.year || !parts.month || !parts.day) return Number.NaN;
+        const timeMatch = String(event.timeText || "").match(/(\d{1,2})\s*:\s*(\d{1,2})/);
+        const hour = timeMatch ? parseInt(timeMatch[1], 10) : 0;
+        const minute = timeMatch ? parseInt(timeMatch[2], 10) : 0;
+        return new Date(parts.year, parts.month - 1, parts.day, hour, minute).getTime();
+      }
+
+      function parseEventDateParts(dateText) {
+        const match = String(dateText || "").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+        return match ? {
+          year: parseInt(match[1], 10),
+          month: parseInt(match[2], 10),
+          day: parseInt(match[3], 10)
+        } : { year: 0, month: 0, day: 0 };
+      }
+
+      function getTaipeiYearMonth() {
+        const parts = new Intl.DateTimeFormat("en", {
+          timeZone: "Asia/Taipei",
+          year: "numeric",
+          month: "numeric"
+        }).formatToParts(new Date());
+        const values = {};
+        parts.forEach(part => {
+          if (part.type === "year" || part.type === "month") {
+            values[part.type] = parseInt(part.value, 10);
+          }
+        });
+        return {
+          year: values.year || new Date().getFullYear(),
+          month: values.month || new Date().getMonth() + 1
+        };
+      }
+
+      function scheduleEventDetailPrefetch(events) {
+        const candidates = sortEventsForDisplay(events || []).filter(event => {
+          const parts = parseEventDateParts(event.dateText);
+          const matchesYear = eventYearFilter === "all" || String(parts.year) === eventYearFilter;
+          const matchesMonth = eventMonthFilter === "all" || String(parts.month) === eventMonthFilter;
+          return matchesYear && matchesMonth;
+        }).slice(0, 2);
+
+        candidates.forEach((event, index) => {
+          if (readEventDetailCache(event.eventId)) return;
+          setTimeout(() => {
+            requestEventPageData(event.eventId).catch(() => {});
+          }, 150 + index * 250);
+        });
+      }
+
+      function requestEventPageData(eventId) {
+        const key = String(eventId || "");
+        if (eventDetailRequests[key]) return eventDetailRequests[key];
+
+        eventDetailRequests[key] = api("getEventPageData", { idToken, eventId: key }).then(result => {
+          delete eventDetailRequests[key];
+          if (result && result.ok) writeEventDetailCache(key, result);
+          return result;
+        }, err => {
+          delete eventDetailRequests[key];
+          throw err;
+        });
+        return eventDetailRequests[key];
+      }
+
+      function readEventDetailCache(eventId) {
+        const key = eventDetailCacheKey(eventId);
+        if (!key) return null;
+        try {
+          const cached = JSON.parse(localStorage.getItem(key) || "null");
+          if (!cached || !cached.savedAt || !cached.data || !cached.data.ok) return null;
+          if (Date.now() - cached.savedAt > EVENT_DETAIL_CACHE_MAX_AGE_MS) {
+            localStorage.removeItem(key);
+            return null;
+          }
+          return cached.data;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function writeEventDetailCache(eventId, data) {
+        const key = eventDetailCacheKey(eventId);
+        if (!key || !data || !data.ok) return;
+        try {
+          localStorage.setItem(key, JSON.stringify({
+            savedAt: Date.now(),
+            data: data
+          }));
+        } catch (err) {
+          // Ignore unavailable browser storage.
+        }
+      }
+
+      function clearEventDetailCache(eventId) {
+        const key = eventDetailCacheKey(eventId);
+        if (!key) return;
+        try {
+          localStorage.removeItem(key);
+        } catch (err) {
+          // Ignore unavailable browser storage.
+        }
+      }
+
+      function eventDetailCacheKey(eventId) {
+        if (!currentLineUserId || !eventId) return "";
+        return "club_event_detail_v4:" + APP_CONFIG.liffId + ":" + currentLineUserId + ":" + eventId;
+      }
+
+      function eventPageDataMatch(a, b) {
+        try {
+          return JSON.stringify(a || null) === JSON.stringify(b || null);
+        } catch (err) {
+          return false;
+        }
+      }
+
+      async function renderEvent(eventId) {
+        setTitle("活動詳情", true);
+        currentEventId = eventId;
+        const cached = readEventDetailCache(eventId);
+        const previewEvent = eventCatalog.find(event => String(event.eventId) === String(eventId)) || null;
+        if (cached) {
+          renderEventPage(cached);
+        } else if (previewEvent) {
+          renderEventPreview(previewEvent);
+        } else {
+          setView(`<div class="notice">載入活動中...</div>`);
+        }
+
+        let result;
+        try {
+          result = await requestEventPageData(eventId);
+        } catch (err) {
+          if (cached) return;
+          throw err;
+        }
+        if (!result.ok) {
+          clearEventDetailCache(eventId);
+          renderNeedVerifyOrError(result);
+          return;
+        }
+
+        currentMember = result.member;
+        if (cached && eventPageDataMatch(cached, result)) return;
+        if ((cached && eventCatalogsMatch([cached.event], [result.event])) ||
+            (!cached && previewEvent && eventCatalogsMatch([previewEvent], [result.event]))) {
+          renderEventDynamicContent(result);
+          return;
+        }
+        renderEventPage(result);
+      }
+
+      function renderEventArticle(event) {
+        return `
+          <article class="card">
+            ${renderEventImage(event.imageUrl)}
+            <div class="card-body">
+              <h2 class="event-title event-name">${escapeHtml(event.title)}</h2>
+              <p class="meta">日期：${escapeHtml(event.dateText)} ${escapeHtml(event.timeText)}</p>
+              <p class="meta">地點：${escapeHtml(event.location)}</p>
+              ${event.address ? `<p class="meta">地址：${escapeHtml(event.address)}</p>` : ""}
+              ${renderNavigationLine(event)}
+              <p class="meta">報名期間：${escapeHtml(event.registerStartText)} ~ ${escapeHtml(event.registerEndText)}</p>
+              ${renderEventStatus(event.status)}
+              <div class="description">${escapeHtml(event.description)}</div>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderEventPreview(event) {
+        setView(`
+          ${renderEventArticle(event)}
+          <div id="eventDynamicContent">
+            <div class="notice">正在載入報名資料...</div>
+          </div>
+        `);
+      }
+
+      function renderEventPage(result) {
+        currentMember = result.member;
+        setView(`
+          ${renderEventArticle(result.event)}
+          <div id="eventDynamicContent">${buildEventDynamicHtml(result)}</div>
+        `);
+      }
+
+      function renderEventDynamicContent(result) {
+        currentMember = result.member;
+        const target = document.getElementById("eventDynamicContent");
+        if (target) {
+          target.innerHTML = buildEventDynamicHtml(result);
+          return;
+        }
+        renderEventPage(result);
+      }
+
+      function buildEventDynamicHtml(result) {
+        const event = result.event;
+        const registration = result.registration;
+        const registrationList = result.registrationList || [];
+        const leaveList = result.leaveList || [];
+        const unregisteredMemberList = result.unregisteredMemberList || [];
+        const memberAttendance = result.memberAttendance || null;
+        const peopleCount = registration && registration.status === "已報名" ? String(registration.peopleCount) : "";
+        const note = registration && registration.status === "已報名" ? registration.note : "";
+        const identityPlaceholder = currentMember && currentMember.name
+          ? `以${currentMember.name}的身分留言`
+          : "";
+        const participationSummaryHtml = `
+          ${renderLeaveList(leaveList)}
+          ${renderUnregisteredMemberList(unregisteredMemberList)}
+          ${renderMemberAttendance(memberAttendance)}
+        `;
+
+        const formHtml = result.canRegister ? `
+          <div class="card">
+            <div class="card-body">
+              <h2 class="event-title">${registration && registration.status === "已報名" ? "修改報名" : "我要報名"}</h2>
+              <label for="peopleCount">報名人數</label>
+              <input id="peopleCount" class="identity-count" type="number" min="1" max="99" value="${escapeAttr(peopleCount)}" placeholder="${escapeAttr(identityPlaceholder)}">
+              ${participationSummaryHtml}
+              <label for="note">備註</label>
+              <textarea id="note" placeholder="例如：素食 1 位">${escapeHtml(note)}</textarea>
+              <div class="actions registration-actions">
+                <button class="primary registration-save" type="button" onclick="submitRegistration()">儲存報名</button>
+                ${registration && registration.status === "請假"
+                  ? `<button class="danger registration-cancel" type="button" onclick="submitCancelLeave()">取消請假</button>`
+                  : `<button class="leave-button registration-leave" type="button" onclick="submitLeave()">請假</button>`}
+                ${registration && registration.status === "已報名" ? `<button class="danger registration-cancel" type="button" onclick="submitCancel()">取消報名</button>` : ""}
+              </div>
+            </div>
+          </div>
+        ` : `
+          <div class="card">
+            <div class="card-body">
+              ${participationSummaryHtml}
+            </div>
+          </div>
+          <div class="notice warning">${escapeHtml(result.registerMessage)}</div>
+        `;
+
+        return `
+          ${registration && registration.status === "已報名" ? `
+            <div class="notice">
+              你已報名此活動，目前總報名人數 ${result.registeredCount} 人。
+              ${renderRegistrationList(registrationList)}
+            </div>
+          ` : `
+            <div class="notice">
+              目前已報名 ${result.registeredCount} 人。
+              ${renderRegistrationList(registrationList)}
+            </div>
+          `}
+          ${registration && registration.status === "請假"
+            ? `<div class="notice warning">${result.canRegister ? "您目前已登記請假，可取消請假或重新送出報名。" : "您已登記請假。"}</div>`
+            : ""}
+          ${registration && registration.status === "已取消"
+            ? `<div class="notice warning">${result.canRegister ? "您先前的報名或請假已取消，可重新選擇報名或請假。" : "您先前的報名或請假已取消。"}</div>`
+            : ""}
+          ${formHtml}
+        `;
+      }
+
+      async function submitRegistration() {
+        const count = document.getElementById("peopleCount").value;
+        const note = document.getElementById("note").value;
+        setView(`<div class="notice">儲存中...</div>`);
+
+        const result = await api("saveRegistration", { idToken, eventId: currentEventId, peopleCount: count, note });
+        if (!result.ok) {
+          setView(`
+            <div class="notice error">${escapeHtml(result.message)}</div>
+            <button class="secondary full" type="button" onclick="renderEvent('${escapeJs(currentEventId)}')">返回活動</button>
+          `);
+          return;
+        }
+
+        clearEventDetailCache(currentEventId);
+        await renderEvent(currentEventId);
+      }
+
+      async function submitCancel() {
+        if (!confirm("確定要取消報名嗎？")) return;
+        setView(`<div class="notice">取消中...</div>`);
+
+        const result = await api("cancelRegistration", { idToken, eventId: currentEventId });
+        if (!result.ok) {
+          setView(`
+            <div class="notice error">${escapeHtml(result.message)}</div>
+            <button class="secondary full" type="button" onclick="renderEvent('${escapeJs(currentEventId)}')">返回活動</button>
+          `);
+          return;
+        }
+
+        clearEventDetailCache(currentEventId);
+        await renderEvent(currentEventId);
+      }
+
+      async function submitLeave() {
+        if (!confirm("確定要登記請假嗎？若原本已報名，報名狀態將改為請假。")) return;
+        setView(`<div class="notice">登記請假中...</div>`);
+
+        const result = await api("saveLeave", { idToken, eventId: currentEventId });
+        if (!result.ok) {
+          setView(`
+            <div class="notice error">${escapeHtml(result.message)}</div>
+            <button class="secondary full" type="button" onclick="renderEvent('${escapeJs(currentEventId)}')">返回活動</button>
+          `);
+          return;
+        }
+
+        clearEventDetailCache(currentEventId);
+        await renderEvent(currentEventId);
+      }
+
+      async function submitCancelLeave() {
+        if (!confirm("確定要取消請假嗎？")) return;
+        setView(`<div class="notice">取消請假中...</div>`);
+
+        const result = await api("cancelLeave", { idToken, eventId: currentEventId });
+        if (!result.ok) {
+          setView(`
+            <div class="notice error">${escapeHtml(result.message)}</div>
+            <button class="secondary full" type="button" onclick="renderEvent('${escapeJs(currentEventId)}')">返回活動</button>
+          `);
+          return;
+        }
+
+        clearEventDetailCache(currentEventId);
+        await renderEvent(currentEventId);
+      }
+
+      async function renderClubShare() {
+        setTitle("社務轉分享", false);
+        setView(`<div class="notice">載入分享內容中...</div>`);
+
+        const result = await api("getClubShareMessages", {});
+        if (!result.ok) {
+          renderError(result.message);
+          return;
+        }
+
+        clubShareMessages = result.messages || [];
+        if (!clubShareMessages.length) {
+          renderError("目前沒有可分享的卡片內容。");
+          return;
+        }
+
+        setView(`
+          <div class="card">
+            <div class="card-body">
+              <h2 class="event-title">社務資料轉分享</h2>
+              <p class="meta">將分享社團基本資料與年度職務兩張卡片。</p>
+              <div class="actions">
+                <button class="danger full" type="button" onclick="shareClubCards()">選擇分享對象</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      async function shareClubCards() {
+        try {
+          if (!liff.isApiAvailable("shareTargetPicker")) {
+            setView(`
+              <div class="notice error">
+                此環境無法使用分享選擇器。請確認 LIFF 後台已啟用 shareTargetPicker，並用 LINE 開啟此頁。
+              </div>
+              <button class="secondary full" type="button" onclick="renderClubShare()">重新載入</button>
+            `);
+            return;
+          }
+
+          setView(`<div class="notice">正在開啟分享選擇器...</div>`);
+          const result = await liff.shareTargetPicker(clubShareMessages, { isMultiple: true });
+
+          if (result && result.status === "success") {
+            setView(`
+              <div class="notice">已送出分享。</div>
+              <button class="primary full" type="button" onclick="closeLiffWindow()">完成</button>
+            `);
+            return;
+          }
+
+          setView(`
+            <div class="notice warning">尚未送出分享。</div>
+            <button class="danger full" type="button" onclick="shareClubCards()">重新選擇分享對象</button>
+          `);
+        } catch (err) {
+          setView(`
+            <div class="notice error">${escapeHtml(errorText(err))}</div>
+            <button class="secondary full" type="button" onclick="renderClubShare()">重新載入</button>
+          `);
+        }
+      }
+
+      async function renderPersonalShare() {
+        setTitle("個人資料轉分享", false);
+        setView(`<div class="notice">載入個人資料卡片中...</div>`);
+
+        const result = await api("getPersonalShareMessages", { idToken });
+        if (!result.ok) {
+          renderNeedVerifyOrError(result);
+          return;
+        }
+
+        personalShareMessages = result.messages || [];
+        if (!personalShareMessages.length) {
+          renderError("目前沒有可分享的個人資料卡片。");
+          return;
+        }
+
+        const pageCount = Number(result.pageCount || 2);
+        const pageDescription = pageCount === 1 ? "一張" : "兩張";
+        setView(`
+          <div class="card">
+            <div class="card-body">
+              <h2 class="event-title">個人資料轉分享</h2>
+              <p class="meta">將分享你的${pageDescription}個人資料卡片。</p>
+              <div class="actions">
+                <button class="danger full" type="button" onclick="sharePersonalCards()">選擇分享對象</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      async function renderDirectoryProfileShare() {
+        setTitle("社友資料轉分享", false);
+        setView(`<div class="notice">載入指定社友的資料卡片中...</div>`);
+
+        const result = await api("getDirectoryProfileShareMessages", {
+          idToken,
+          memberKey: currentDirectoryMemberKey
+        });
+        if (!result.ok) {
+          renderNeedVerifyOrError(result);
+          return;
+        }
+
+        personalShareMessages = result.messages || [];
+        if (!personalShareMessages.length) {
+          renderError("目前沒有可分享的社友資料卡片。");
+          return;
+        }
+
+        const memberName = result.memberName || "這位社友";
+        setView(`
+          <div class="card">
+            <div class="card-body">
+              <h2 class="event-title">${escapeHtml(memberName)} 資料轉分享</h2>
+              <p class="meta">將分享這位社友的兩張個人資料卡片。</p>
+              <div class="actions">
+                <button class="danger full" type="button" onclick="sharePersonalCards()">選擇分享對象</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      async function renderExecutiveSecretaryShare() {
+        setTitle("執行秘書資料轉分享", false);
+        setView(`<div class="notice">載入執行秘書名片中...</div>`);
+
+        const result = await api("getExecutiveSecretaryShareMessages", { idToken });
+        if (!result.ok) {
+          renderNeedVerifyOrError(result);
+          return;
+        }
+
+        personalShareMessages = result.messages || [];
+        if (!personalShareMessages.length) {
+          renderError("目前沒有可分享的執行秘書名片。");
+          return;
+        }
+
+        const memberName = result.memberName || "執行秘書";
+        setView(`
+          <div class="card">
+            <div class="card-body">
+              <h2 class="event-title">${escapeHtml(memberName)} 名片轉分享</h2>
+              <p class="meta">將分享這一張執行秘書名片。</p>
+              <div class="actions">
+                <button class="danger full" type="button" onclick="sharePersonalCards()">選擇分享對象</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      async function sharePersonalCards() {
+        try {
+          if (!liff.isApiAvailable("shareTargetPicker")) {
+            setView(`
+              <div class="notice error">
+                此環境無法使用分享選擇器。請確認 LIFF 後台已啟用 shareTargetPicker，並用 LINE 開啟此頁。
+              </div>
+              <button class="secondary full" type="button" onclick="reloadPersonalShare()">重新載入</button>
+            `);
+            return;
+          }
+
+          setView(`<div class="notice">正在開啟分享選擇器...</div>`);
+          const result = await liff.shareTargetPicker(personalShareMessages, { isMultiple: true });
+
+          if (result && result.status === "success") {
+            setView(`
+              <div class="notice">已送出分享。</div>
+              <button class="primary full" type="button" onclick="closeLiffWindow()">完成</button>
+            `);
+            return;
+          }
+
+          setView(`
+            <div class="notice warning">尚未送出分享。</div>
+            <button class="danger full" type="button" onclick="sharePersonalCards()">重新選擇分享對象</button>
+          `);
+        } catch (err) {
+          setView(`
+            <div class="notice error">${escapeHtml(errorText(err))}</div>
+            <button class="secondary full" type="button" onclick="reloadPersonalShare()">重新載入</button>
+          `);
+        }
+      }
+
+      function reloadPersonalShare() {
+        if (currentPage === "shareDirectoryProfile") {
+          renderDirectoryProfileShare();
+          return;
+        }
+        if (currentPage === "shareExecutiveSecretary") {
+          renderExecutiveSecretaryShare();
+          return;
+        }
+        renderPersonalShare();
+      }
+
+      function closeLiffWindow() {
+        if (liff.isInClient()) {
+          liff.closeWindow();
+          return;
+        }
+        goEvents();
+      }
+
+      function renderNavigationLine(event) {
+        const query = event.address || event.location || "";
+        if (!query && !event.mapUrl) return "";
+        const url = event.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+        return `
+          <p class="meta">
+            導航：<a class="map-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">開啟地圖</a>
+          </p>
+        `;
+      }
+
+      function renderEventStatus(status) {
+        const value = String(status || "").trim();
+        if (value === "開放報名") {
+          return `
+            <p class="meta event-status-line">
+              狀態：<span class="status-badge open">活動報名中</span>
+            </p>
+          `;
+        }
+        return `
+          <p class="meta event-status-line">
+            狀態：<span class="status-badge neutral">${escapeHtml(value || "未設定")}</span>
+          </p>
+        `;
+      }
+
+      function renderEventImage(imageUrl) {
+        const candidates = getImageUrlCandidates(imageUrl);
+        if (!candidates.length) return "";
+
+        return `
+          <img
+            class="event-image"
+            src="${escapeAttr(candidates[0])}"
+            data-image-index="0"
+            data-image-candidates="${escapeAttr(candidates.join("|"))}"
+            alt=""
+            referrerpolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
+            onerror="handleEventImageError(this)"
+          >
+        `;
+      }
+
+      function handleEventImageError(img) {
+        const candidates = String(img.dataset.imageCandidates || "")
+          .split("|")
+          .filter(Boolean);
+        const currentIndex = parseInt(img.dataset.imageIndex || "0", 10) || 0;
+        const nextIndex = currentIndex + 1;
+
+        if (nextIndex < candidates.length) {
+          img.dataset.imageIndex = String(nextIndex);
+          img.src = candidates[nextIndex];
+          return;
+        }
+
+        img.remove();
+      }
+
+      function getImageUrlCandidates(imageUrl) {
+        const url = String(imageUrl || "").trim();
+        if (!url) return [];
+
+        const driveFileId = getGoogleDriveFileId(url);
+        if (driveFileId) {
+          const id = encodeURIComponent(driveFileId);
+          return [
+            `https://drive.google.com/thumbnail?id=${id}&sz=w1200`,
+            `https://lh3.googleusercontent.com/d/${id}=w1200`,
+            `https://drive.google.com/uc?export=view&id=${id}`,
+            `https://drive.usercontent.google.com/download?id=${id}&export=view&authuser=0`
+          ];
+        }
+
+        return [url];
+      }
+
+      function getGoogleDriveFileId(url) {
+        if (url.indexOf("drive.google.com") === -1 && url.indexOf("drive.usercontent.google.com") === -1) {
+          return "";
+        }
+
+        const fileMatch = url.match(/\/file\/d\/([^/?#]+)/);
+        if (fileMatch && fileMatch[1]) {
+          return decodeURIComponent(fileMatch[1]);
+        }
+
+        const idMatch = url.match(/[?&]id=([^&#]+)/);
+        if (idMatch && idMatch[1]) {
+          return decodeURIComponent(idMatch[1]);
+        }
+
+        return "";
+      }
+
+      function renderRegistrationList(registrations) {
+        if (!registrations || !registrations.length) {
+          return `<div class="registration-list">目前尚無報名名單。</div>`;
+        }
+
+        const text = registrations.map(item => {
+          const note = item.note ? `，${item.note}` : "";
+          return `${item.name}(${item.peopleCount}位${note})`;
+        }).join("、");
+
+        return `<div class="registration-list">${escapeHtml(text)}</div>`;
+      }
+
+      function renderUnregisteredMemberList(members) {
+        if (!members || !members.length) {
+          return `
+            <div class="member-status">
+              <strong>尚未報名社友/執秘：</strong>目前沒有尚未回覆的已綁定社友或執秘。
+            </div>
+          `;
+        }
+
+        const names = members
+          .map(member => member.name)
+          .filter(Boolean)
+          .join("、");
+
+        return `
+          <div class="member-status">
+            <strong>尚未報名社友/執秘：</strong>${escapeHtml(names || "目前沒有可顯示的社友或執秘")}
+          </div>
+        `;
+      }
+
+      function renderLeaveList(members) {
+        const names = (members || [])
+          .map(member => member.name)
+          .filter(Boolean)
+          .join("、");
+
+        return `
+          <div class="leave-status">
+            <strong>請假社友/寶眷/執秘：</strong>${escapeHtml(names || "目前無人請假")}
+          </div>
+        `;
+      }
+
+      function renderMemberAttendance(attendance) {
+        const registeredCount = Math.max(0, parseInt(attendance && attendance.registeredCount, 10) || 0);
+        const totalCount = Math.max(0, parseInt(attendance && attendance.totalCount, 10) || 0);
+        let rate = Number(attendance && attendance.rate);
+        if (!Number.isFinite(rate)) {
+          rate = totalCount > 0 ? Math.round((registeredCount / totalCount) * 1000) / 10 : 0;
+        }
+        const rateText = Number(rate.toFixed(1)).toString();
+
+        return `
+          <div class="attendance-status">
+            <strong>社員報名出席率：</strong>${registeredCount}/${totalCount}（${rateText}%）
+          </div>
+        `;
+      }
+
+      function renderNeedVerifyOrError(result) {
+        if (result.code === "NOT_BOUND") {
+          setTitle("需要社友/寶眷驗證", false);
+          setView(`
+            <div class="notice warning">${escapeHtml(result.message)}</div>
+            <button class="primary full" type="button" onclick="goVerify()">前往社友/寶眷驗證</button>
+          `);
+          return;
+        }
+        renderError(result.message);
+      }
+
+      function goVerify() {
+        currentPage = "verify";
+        currentEventId = "";
+        history.replaceState(null, "", "?page=verify");
+        renderVerify();
+      }
+
+      function goEvents() {
+        currentPage = "events";
+        currentEventId = "";
+        history.replaceState(null, "", "?page=events");
+        renderEvents();
+      }
+
+      function goEvent(eventId) {
+        currentPage = "event";
+        currentEventId = eventId;
+        history.replaceState(null, "", "?page=event&eventId=" + encodeURIComponent(eventId));
+        renderEvent(eventId);
+      }
+
+      function api(action, payload) {
+        return new Promise((resolve, reject) => {
+          const callbackName = "__clubApiCallback_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+          const params = new URLSearchParams({
+            action,
+            callback: callbackName,
+            payload: JSON.stringify(payload || {})
+          });
+
+          const script = document.createElement("script");
+          const timer = setTimeout(() => {
+            cleanup();
+            reject(new Error("API 沒有回應，請確認 Apps Script Web App URL 與部署權限。"));
+          }, 20000);
+
+          window[callbackName] = data => {
+            cleanup();
+            resolve(data);
+          };
+
+          script.onerror = () => {
+            cleanup();
+            reject(new Error("API 載入失敗，請確認 Apps Script Web App URL 是否正確。"));
+          };
+
+          script.src = APP_CONFIG.apiUrl + (APP_CONFIG.apiUrl.indexOf("?") === -1 ? "?" : "&") + params.toString();
+          document.body.appendChild(script);
+
+          function cleanup() {
+            clearTimeout(timer);
+            delete window[callbackName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+          }
+        });
+      }
+
+      function setTitle(title, showBack) {
+        document.getElementById("pageTitle").textContent = title;
+        document.getElementById("backBtn").hidden = !showBack;
+        document.getElementById("activityBrand").hidden = title !== "活動列表" && title !== "活動詳情";
+      }
+
+      function setView(html) {
+        document.getElementById("view").innerHTML = html;
+      }
+
+      function renderError(message) {
+        setView(`<div class="notice error">${escapeHtml(message || "發生錯誤。")}</div>`);
+      }
+
+      function errorText(err) {
+        return err && err.message ? err.message : String(err || "發生錯誤。");
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? "" : value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value);
+      }
+
+      function escapeJs(value) {
+        return String(value == null ? "" : value)
+          .replace(/\\/g, "\\\\")
+          .replace(/'/g, "\\'");
+      }
+    </script>
+  </body>
+</html>

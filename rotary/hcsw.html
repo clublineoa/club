@@ -146,6 +146,30 @@
         gap: 6px;
       }
 
+      .event-type-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .event-type-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 4px;
+        color: #ffffff;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .event-type-badge.general {
+        background: #16815f;
+      }
+
+      .event-type-badge.committee {
+        background: #1560bd;
+      }
+
       .status-badge {
         display: inline-block;
         padding: 3px 8px;
@@ -648,7 +672,7 @@
 
       function eventCacheKey() {
         if (!currentLineUserId) return "";
-        return "club_events_v3:" + APP_CONFIG.liffId + ":" + currentLineUserId;
+        return "club_events_v4:" + APP_CONFIG.liffId + ":" + currentLineUserId;
       }
 
       function applyEventFilters() {
@@ -681,6 +705,7 @@
               <h2 class="event-title event-name">${escapeHtml(event.title)}</h2>
               <p class="meta">${escapeHtml(event.dateText)} ${escapeHtml(event.timeText)}</p>
               <p class="meta">${escapeHtml(event.location)}</p>
+              ${renderEventType(event.eventType)}
               ${renderEventStatus(event.status)}
               <button class="primary full" type="button" onclick="goEvent('${escapeJs(event.eventId)}')">
                 ${event.status === "開放報名" ? "查看 / 報名" : "查看活動"}
@@ -822,7 +847,7 @@
 
       function eventDetailCacheKey(eventId) {
         if (!currentLineUserId || !eventId) return "";
-        return "club_event_detail_v4:" + APP_CONFIG.liffId + ":" + currentLineUserId + ":" + eventId;
+        return "club_event_detail_v5:" + APP_CONFIG.liffId + ":" + currentLineUserId + ":" + eventId;
       }
 
       function eventPageDataMatch(a, b) {
@@ -880,6 +905,7 @@
               ${event.address ? `<p class="meta">地址：${escapeHtml(event.address)}</p>` : ""}
               ${renderNavigationLine(event)}
               <p class="meta">報名期間：${escapeHtml(event.registerStartText)} ~ ${escapeHtml(event.registerEndText)}</p>
+              ${renderEventType(event.eventType)}
               ${renderEventStatus(event.status)}
               <div class="description">${escapeHtml(event.description)}</div>
             </div>
@@ -921,15 +947,19 @@
         const leaveList = result.leaveList || [];
         const unregisteredMemberList = result.unregisteredMemberList || [];
         const memberAttendance = result.memberAttendance || null;
+        const committeeAttendance = result.committeeAttendance || null;
+        const isCommitteeMeeting = event.eventType === "理監事會議";
         const peopleCount = registration && registration.status === "已報名" ? String(registration.peopleCount) : "";
         const note = registration && registration.status === "已報名" ? registration.note : "";
         const identityPlaceholder = currentMember && currentMember.name
           ? `以${currentMember.name}的身分留言`
           : "";
         const participationSummaryHtml = `
-          ${renderLeaveList(leaveList)}
-          ${renderUnregisteredMemberList(unregisteredMemberList)}
-          ${renderMemberAttendance(memberAttendance)}
+          ${renderLeaveList(leaveList, isCommitteeMeeting)}
+          ${renderUnregisteredMemberList(unregisteredMemberList, isCommitteeMeeting)}
+          ${isCommitteeMeeting
+            ? renderCommitteeAttendance(committeeAttendance)
+            : renderMemberAttendance(memberAttendance)}
         `;
 
         const formHtml = result.canRegister ? `
@@ -1291,6 +1321,18 @@
         `;
       }
 
+      function renderEventType(eventType) {
+        const value = String(eventType || "").trim() === "理監事會議"
+          ? "理監事會議"
+          : "一般活動";
+        const badgeClass = value === "理監事會議" ? "committee" : "general";
+        return `
+          <p class="meta event-type-line">
+            活動性質：<span class="event-type-badge ${badgeClass}">${escapeHtml(value)}</span>
+          </p>
+        `;
+      }
+
       function renderEventImage(imageUrl) {
         const candidates = getImageUrlCandidates(imageUrl);
         if (!candidates.length) return "";
@@ -1375,11 +1417,15 @@
         return `<div class="registration-list">${escapeHtml(text)}</div>`;
       }
 
-      function renderUnregisteredMemberList(members) {
+      function renderUnregisteredMemberList(members, isCommitteeMeeting) {
+        const label = isCommitteeMeeting ? "尚未報名理事/監事" : "尚未報名社友/執秘";
+        const emptyText = isCommitteeMeeting
+          ? "目前沒有尚未回覆的已綁定理事或監事。"
+          : "目前沒有尚未回覆的已綁定社友或執秘。";
         if (!members || !members.length) {
           return `
             <div class="member-status">
-              <strong>尚未報名社友/執秘：</strong>目前沒有尚未回覆的已綁定社友或執秘。
+              <strong>${label}：</strong>${emptyText}
             </div>
           `;
         }
@@ -1391,12 +1437,13 @@
 
         return `
           <div class="member-status">
-            <strong>尚未報名社友/執秘：</strong>${escapeHtml(names || "目前沒有可顯示的社友或執秘")}
+            <strong>${label}：</strong>${escapeHtml(names || emptyText)}
           </div>
         `;
       }
 
-      function renderLeaveList(members) {
+      function renderLeaveList(members, isCommitteeMeeting) {
+        const label = isCommitteeMeeting ? "請假理事/監事" : "請假社友/寶眷/執秘";
         const names = (members || [])
           .map(member => member.name)
           .filter(Boolean)
@@ -1404,12 +1451,31 @@
 
         return `
           <div class="leave-status">
-            <strong>請假社友/寶眷/執秘：</strong>${escapeHtml(names || "目前無人請假")}
+            <strong>${label}：</strong>${escapeHtml(names || "目前無人請假")}
           </div>
         `;
       }
 
       function renderMemberAttendance(attendance) {
+        return `
+          <div class="attendance-status">
+            <strong>社員報名出席率：</strong>${renderAttendanceValue(attendance)}
+          </div>
+        `;
+      }
+
+      function renderCommitteeAttendance(attendance) {
+        const stats = attendance || {};
+        return `
+          <div class="attendance-status">
+            <div><strong>理事報名出席率：</strong>${renderAttendanceValue(stats.director)}</div>
+            <div><strong>監事報名出席率：</strong>${renderAttendanceValue(stats.supervisor)}</div>
+            <div><strong>合計出席率：</strong>${renderAttendanceValue(stats.combined)}</div>
+          </div>
+        `;
+      }
+
+      function renderAttendanceValue(attendance) {
         const registeredCount = Math.max(0, parseInt(attendance && attendance.registeredCount, 10) || 0);
         const totalCount = Math.max(0, parseInt(attendance && attendance.totalCount, 10) || 0);
         let rate = Number(attendance && attendance.rate);
@@ -1417,12 +1483,7 @@
           rate = totalCount > 0 ? Math.round((registeredCount / totalCount) * 1000) / 10 : 0;
         }
         const rateText = Number(rate.toFixed(1)).toString();
-
-        return `
-          <div class="attendance-status">
-            <strong>社員報名出席率：</strong>${registeredCount}/${totalCount}（${rateText}%）
-          </div>
-        `;
+        return `${registeredCount}/${totalCount}（${rateText}%）`;
       }
 
       function renderNeedVerifyOrError(result) {

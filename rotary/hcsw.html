@@ -171,7 +171,7 @@
       }
 
       .status-badge {
-        display: inline-block:
+        display: inline-block;
         padding: 3px 8px;
         border-radius: 4px;
         font-size: 15px;
@@ -432,6 +432,7 @@
       let eventYearFilter = String(initialEventPeriod.year);
       let eventMonthFilter = String(initialEventPeriod.month);
       const eventDetailRequests = {};
+      const eventDetailVersions = {};
 
       document.addEventListener("DOMContentLoaded", init);
 
@@ -794,16 +795,25 @@
       function requestEventPageData(eventId) {
         const key = String(eventId || "");
         if (eventDetailRequests[key]) return eventDetailRequests[key];
-
-        eventDetailRequests[key] = api("getEventPageData", { idToken, eventId: key }).then(result => {
-          delete eventDetailRequests[key];
-          if (result && result.ok) writeEventDetailCache(key, result);
+        const version = eventDetailVersions[key] || 0;
+        const request = api("getEventPageData", { idToken, eventId: key }).then(result => {
+          if (eventDetailRequests[key] === request) delete eventDetailRequests[key];
+          if (result && result.ok && version === (eventDetailVersions[key] || 0)) {
+            writeEventDetailCache(key, result);
+          }
           return result;
         }, err => {
-          delete eventDetailRequests[key];
+          if (eventDetailRequests[key] === request) delete eventDetailRequests[key];
           throw err;
         });
-        return eventDetailRequests[key];
+        eventDetailRequests[key] = request;
+        return request;
+      }
+
+      function invalidateEventDetailRequest(eventId) {
+        const key = String(eventId || "");
+        eventDetailVersions[key] = (eventDetailVersions[key] || 0) + 1;
+        delete eventDetailRequests[key];
       }
 
       function readEventDetailCache(eventId) {
@@ -861,6 +871,7 @@
       async function renderEvent(eventId) {
         setTitle("活動詳情", true);
         currentEventId = eventId;
+        const version = eventDetailVersions[eventId] || 0;
         const cached = readEventDetailCache(eventId);
         const previewEvent = eventCatalog.find(event => String(event.eventId) === String(eventId)) || null;
         if (cached) {
@@ -875,9 +886,12 @@
         try {
           result = await requestEventPageData(eventId);
         } catch (err) {
+          if (version !== (eventDetailVersions[eventId] || 0)) return;
           if (cached) return;
           throw err;
         }
+        if (version !== (eventDetailVersions[eventId] || 0) ||
+            String(currentEventId) !== String(eventId)) return;
         if (!result.ok) {
           clearEventDetailCache(eventId);
           renderNeedVerifyOrError(result);
@@ -1014,6 +1028,7 @@
       async function submitRegistration() {
         const count = document.getElementById("peopleCount").value;
         const note = document.getElementById("note").value;
+        invalidateEventDetailRequest(currentEventId);
         setView(`<div class="notice">儲存中...</div>`);
 
         const result = await api("saveRegistration", { idToken, eventId: currentEventId, peopleCount: count, note });
@@ -1025,12 +1040,12 @@
           return;
         }
 
-        clearEventDetailCache(currentEventId);
-        await renderEvent(currentEventId);
+        await showRegistrationResult(result);
       }
 
       async function submitCancel() {
         if (!confirm("確定要取消報名嗎？")) return;
+        invalidateEventDetailRequest(currentEventId);
         setView(`<div class="notice">取消中...</div>`);
 
         const result = await api("cancelRegistration", { idToken, eventId: currentEventId });
@@ -1042,12 +1057,12 @@
           return;
         }
 
-        clearEventDetailCache(currentEventId);
-        await renderEvent(currentEventId);
+        await showRegistrationResult(result);
       }
 
       async function submitLeave() {
         if (!confirm("確定要登記請假嗎？若原本已報名，報名狀態將改為請假。")) return;
+        invalidateEventDetailRequest(currentEventId);
         setView(`<div class="notice">登記請假中...</div>`);
 
         const result = await api("saveLeave", { idToken, eventId: currentEventId });
@@ -1059,12 +1074,12 @@
           return;
         }
 
-        clearEventDetailCache(currentEventId);
-        await renderEvent(currentEventId);
+        await showRegistrationResult(result);
       }
 
       async function submitCancelLeave() {
         if (!confirm("確定要取消請假嗎？")) return;
+        invalidateEventDetailRequest(currentEventId);
         setView(`<div class="notice">取消請假中...</div>`);
 
         const result = await api("cancelLeave", { idToken, eventId: currentEventId });
@@ -1076,7 +1091,21 @@
           return;
         }
 
+        await showRegistrationResult(result);
+      }
+
+      async function showRegistrationResult(result) {
+        invalidateEventDetailRequest(currentEventId);
         clearEventDetailCache(currentEventId);
+        const pageData = result.pageData;
+        if (pageData && pageData.ok && pageData.event &&
+            String(pageData.event.eventId) === String(currentEventId)) {
+          currentMember = pageData.member;
+          writeEventDetailCache(currentEventId, pageData);
+          renderEventPage(pageData);
+          return;
+        }
+        // Keep working when the site is updated before the customer's Library.
         await renderEvent(currentEventId);
       }
 

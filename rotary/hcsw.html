@@ -316,6 +316,16 @@
         color: var(--warning);
       }
 
+      .field-error {
+        margin: 6px 0 12px;
+        color: var(--danger);
+        font-size: 14px;
+      }
+
+      input[aria-invalid="true"] {
+        border-color: var(--danger);
+      }
+
       .registration-list {
         margin-top: 10px;
         padding-top: 10px;
@@ -508,7 +518,7 @@
         setView(`
           <div class="card">
             <div class="card-body">
-              <p class="meta">請輸入完整手機號碼以進行驗證。</p>
+              <p class="meta">請輸入社團通訊錄或執行秘書資訊中的手機完整號碼。</p>
               <label for="memberPhone">手機完整號碼</label>
               <input id="memberPhone" inputmode="tel" autocomplete="tel" placeholder="例如：0912345678">
               <div class="actions">
@@ -981,7 +991,8 @@
             <div class="card-body">
               <h2 class="event-title">${registration && registration.status === "已報名" ? "修改報名" : "我要報名"}</h2>
               <label for="peopleCount">報名人數</label>
-              <input id="peopleCount" class="identity-count" type="number" min="1" max="99" value="${escapeAttr(peopleCount)}" placeholder="${escapeAttr(identityPlaceholder)}">
+              <input id="peopleCount" class="identity-count" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" required aria-describedby="peopleCountError" oninput="validateRegistrationPeopleCount(false)" value="${escapeAttr(peopleCount)}" placeholder="${escapeAttr(identityPlaceholder)}">
+              <p id="peopleCountError" class="field-error" role="alert" hidden></p>
               ${participationSummaryHtml}
               <label for="note">備註</label>
               <textarea id="note" placeholder="例如：素食 1 位">${escapeHtml(note)}</textarea>
@@ -1025,8 +1036,34 @@
         `;
       }
 
+      function validateRegistrationPeopleCount(submitting) {
+        const input = document.getElementById("peopleCount");
+        const error = document.getElementById("peopleCountError");
+        const value = input.value.trim();
+        let message = "";
+        if (!value) {
+          if (submitting) message = "報名參加人數最少需為1人。";
+        } else if (!/^[0-9]+$/.test(value)) {
+          message = "請輸入1至99的整數人數。";
+        } else if (Number(value) < 1) {
+          message = "報名參加人數最少需為1人。";
+        } else if (Number(value) > 99) {
+          message = "報名人數不可超過99人。";
+        }
+        input.setCustomValidity(message);
+        input.setAttribute("aria-invalid", message ? "true" : "false");
+        error.textContent = message;
+        error.hidden = !message;
+        if (submitting && message) {
+          input.focus();
+          input.reportValidity();
+        }
+        return !!value && !message;
+      }
+
       async function submitRegistration() {
-        const count = document.getElementById("peopleCount").value;
+        if (!validateRegistrationPeopleCount(true)) return;
+        const count = document.getElementById("peopleCount").value.trim();
         const note = document.getElementById("note").value;
         invalidateEventDetailRequest(currentEventId);
         setView(`<div class="notice">儲存中...</div>`);

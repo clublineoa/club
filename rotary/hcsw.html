@@ -170,6 +170,10 @@
         background: #1560bd;
       }
 
+      .event-type-badge.district {
+        background: #bc570b;
+      }
+
       .status-badge {
         display: inline-block;
         padding: 3px 8px;
@@ -436,6 +440,7 @@
       let currentEventId = new URLSearchParams(location.search).get("eventId") || "";
       let currentDirectoryMemberKey = new URLSearchParams(location.search).get("memberKey") || "";
       let currentMember = null;
+      let verificationSubmitting = false;
       let clubShareMessages = [];
       let personalShareMessages = [];
       let eventCatalog = [];
@@ -515,14 +520,19 @@
           return;
         }
 
+        renderVerifyForm("", "");
+      }
+
+      function renderVerifyForm(phone, message) {
         setView(`
           <div class="card">
             <div class="card-body">
+              ${message ? `<div class="notice error" role="alert">${escapeHtml(message)}</div>` : ""}
               <p class="meta">請輸入社團通訊錄或執行秘書資訊中的手機完整號碼。</p>
               <label for="memberPhone">手機完整號碼</label>
-              <input id="memberPhone" inputmode="tel" autocomplete="tel" placeholder="例如：0912345678">
+              <input id="memberPhone" inputmode="tel" autocomplete="tel" placeholder="例如：0912345678" value="${escapeAttr(phone || "")}">
               <div class="actions">
-                <button class="primary full" type="button" onclick="submitVerify()">完成驗證</button>
+                <button id="verifyButton" class="primary full" type="button" onclick="submitVerify()">完成驗證</button>
               </div>
             </div>
           </div>
@@ -530,26 +540,36 @@
       }
 
       async function submitVerify() {
-        const phone = document.getElementById("memberPhone").value;
-        setView(`<div class="notice">驗證中...</div>`);
-
-        const result = await api("bindMember", { idToken, phone });
-        if (!result.ok) {
-          setView(`
-            <div class="notice error">${escapeHtml(result.message)}</div>
-            <button class="secondary full" type="button" onclick="renderVerify()">重新輸入</button>
-          `);
+        const input = document.getElementById("memberPhone");
+        if (verificationSubmitting || !input) return;
+        const phone = input.value.trim();
+        if (!phone) {
+          renderVerifyForm(phone, "請輸入手機號碼。");
+          document.getElementById("memberPhone").focus();
           return;
         }
 
-        currentMember = result.member;
-        setView(`
+        verificationSubmitting = true;
+        input.disabled = true;
+        const button = document.getElementById("verifyButton");
+        button.disabled = true;
+        button.textContent = "驗證中...";
+        try {
+          const result = await api("bindMember", { idToken, phone });
+          if (!result.ok) throw new Error(result.message || "驗證失敗，請稍後再試。");
+          currentMember = result.member;
+          setView(`
           <div class="notice">
             <strong>${escapeHtml(result.member.name)}</strong>，您已完成身分驗證，歡迎加入「${escapeHtml(result.clubName || "本社團")}」官方帳號。
             <div class="small">驗證手機: ${escapeHtml(result.member.phone || "")}</div>
           </div>
           <button class="primary full" type="button" onclick="goEvents()">查看活動列表</button>
-        `);
+          `);
+        } catch (error) {
+          renderVerifyForm(phone, errorText(error));
+        } finally {
+          verificationSubmitting = false;
+        }
       }
 
       async function renderEvents() {
@@ -1388,10 +1408,9 @@
       }
 
       function renderEventType(eventType) {
-        const value = String(eventType || "").trim() === "理監事會議"
-          ? "理監事會議"
-          : "一般活動";
-        const badgeClass = value === "理監事會議" ? "committee" : "general";
+        const type = String(eventType || "").trim();
+        const value = ["理監事會議", "地區活動"].includes(type) ? type : "一般活動";
+        const badgeClass = value === "理監事會議" ? "committee" : value === "地區活動" ? "district" : "general";
         return `
           <p class="meta event-type-line">
             活動性質：<span class="event-type-badge ${badgeClass}">${escapeHtml(value)}</span>

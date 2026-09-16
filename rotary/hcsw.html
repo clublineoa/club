@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>新竹西南扶輪社</title>
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script defer src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
       :root {
         --bg: #f4f6f8;
@@ -430,7 +430,7 @@
         liffId: "2010967326-TuutKFkE",
         apiUrl: "https://script.google.com/macros/s/AKfycbxFNLe7QObLoQ4MyW2oZtDILphG38GVVVDhUYzx_WZj24191ZFKJ3IYGkgTWTo44QG_/exec"
       };
-      const EVENT_CACHE_MAX_AGE_MS = 30 * 60 * 1000;
+      const EVENT_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
       const EVENT_DETAIL_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
       const initialEventPeriod = getTaipeiYearMonth();
 
@@ -448,6 +448,8 @@
       let eventMonthFilter = String(initialEventPeriod.month);
       const eventDetailRequests = {};
       const eventDetailVersions = {};
+      let eventListVersion = 0;
+      let eventPrefetchTimer = null;
 
       document.addEventListener("DOMContentLoaded", init);
 
@@ -574,10 +576,12 @@
 
       async function renderEvents() {
         setTitle("活動列表", false);
+        cancelEventPrefetch();
+        const version = ++eventListVersion;
         const cached = readEventCache();
         if (cached) {
-          renderEventCatalog(cached.member, cached.events);
-          scheduleEventDetailPrefetch(cached.events);
+          renderEventCatalog(null, cached.events);
+          setEventRefreshStatus("顯示上次活動資料，更新中...");
         } else {
           setView(`<div class="notice">載入活動中...</div>`);
         }
@@ -586,11 +590,15 @@
         try {
           result = await api("listEvents", { idToken });
         } catch (err) {
+          if (version !== eventListVersion || currentPage !== "events") return;
           if (cached) {
+            setEventRefreshStatus("暫時無法更新，以下為上次活動資料。", true);
             return;
           }
-          throw err;
+          renderError(errorText(err));
+          return;
         }
+        if (version !== eventListVersion || currentPage !== "events") return;
         if (!result.ok) {
           clearEventCache();
           renderNeedVerifyOrError(result);
@@ -602,6 +610,7 @@
         currentMember = result.member;
         scheduleEventDetailPrefetch(freshEvents);
         if (cached && eventCatalogsMatch(cached.events, freshEvents)) {
+          setEventRefreshStatus("");
           return;
         }
         renderEventCatalog(result.member, freshEvents);
@@ -611,7 +620,7 @@
         currentMember = member;
         eventCatalog = sortEventsForDisplay(events || []);
         if (!eventCatalog.length) {
-          setView(`<div class="empty">目前沒有可顯示的活動。</div>`);
+          setView(`${eventRefreshStatusHtml()}<div class="empty">目前沒有可顯示的活動。</div>`);
           return;
         }
 
@@ -630,6 +639,7 @@
         `).join("");
 
         setView(`
+          ${eventRefreshStatusHtml()}
           <div class="event-filters" aria-label="活動篩選">
             <div class="event-filter">
               <label for="eventYearFilter">年份</label>
@@ -653,7 +663,8 @@
 
       function eventCatalogsMatch(cachedEvents, freshEvents) {
         try {
-          return JSON.stringify(cachedEvents || []) === JSON.stringify(freshEvents || []);
+          return JSON.stringify((cachedEvents || []).map(eventPreviewData)) ===
+            JSON.stringify((freshEvents || []).map(eventPreviewData));
         } catch (err) {
           return false;
         }
@@ -665,8 +676,8 @@
 
         try {
           const cached = JSON.parse(localStorage.getItem(key) || "null");
-          if (!cached || !cached.savedAt || !Array.isArray(cached.events)) return null;
-          if (Date.now() - cached.savedAt > EVENT_CACHE_MAX_AGE_MS) {
+          if (!cached || !Array.isArray(cached.events) || !cached.events.every(isEventPreview)) return null;
+          if (!isFreshEventPreview(cached.savedAt)) {
             localStorage.removeItem(key);
             return null;
           }
@@ -683,8 +694,7 @@
         try {
           localStorage.setItem(key, JSON.stringify({
             savedAt: Date.now(),
-            member: member || null,
-            events: events || []
+            events: (events || []).map(eventPreviewData)
           }));
         } catch (err) {
           // Some in-app browsers can disable persistent storage.
@@ -702,8 +712,85 @@
       }
 
       function eventCacheKey() {
-        if (!currentLineUserId) return "";
-        return "club_events_v4:" + APP_CONFIG.liffId + ":" + currentLineUserId;
+        const scope = eventCacheScope();
+        return scope ? scope + "catalog" : "";
+      }
+
+      function eventCacheScope() {
+        return currentLineUserId ? "club_events_v6:" +
+          JSON.stringify([APP_CONFIG.apiUrl, APP_CONFIG.liffId, currentLineUserId]) + ":" : "";
+      }
+
+      function eventPreviewData(event) {
+        const preview = {};
+        // Long-lived previews never include identities, notes or registration lists.
+        ["eventId", "title", "dateText", "timeText", "location", "address", "mapUrl",
+          "imageUrl", "description", "registerStartText", "registerEndText", "status", "eventType"]
+          .forEach(key => { if (event[key] !== undefined) preview[key] = event[key]; });
+        return preview;
+      }
+
+      function readEventPreview(eventId) {
+        const scope = eventCacheScope();
+        if (!scope) return null;
+        const catalog = readEventCache();
+        const catalogEvent = catalog && catalog.events.find(event => String(event.eventId) === String(eventId));
+        try {
+          const key = scope + "preview:" + eventId;
+          const cached = JSON.parse(localStorage.getItem(key) || "null");
+          if (cached && isFreshEventPreview(cached.savedAt) && isEventPreview(cached.event) &&
+              String(cached.event.eventId) === String(eventId)) {
+            return catalogEvent && catalog.savedAt > cached.savedAt ? catalogEvent : cached.event;
+          }
+          localStorage.removeItem(key);
+        } catch (err) {
+          // A missing preview must not prevent a fresh API request.
+        }
+        return catalogEvent || null;
+      }
+
+      function isEventPreview(event) {
+        return event && typeof event === "object" && typeof event.eventId === "string" &&
+          event.eventId !== "" && typeof event.title === "string";
+      }
+
+      function isFreshEventPreview(savedAt) {
+        const age = Date.now() - savedAt;
+        return Number.isFinite(savedAt) && age >= 0 && age <= EVENT_CACHE_MAX_AGE_MS;
+      }
+
+      function clearAllEventCaches() {
+        cancelEventPrefetch();
+        ++eventListVersion;
+        Object.keys(eventDetailRequests).forEach(invalidateEventDetailRequest);
+        currentMember = null;
+        eventCatalog = [];
+        const scope = eventCacheScope();
+        if (!scope) return;
+        try {
+          for (let index = localStorage.length - 1; index >= 0; index--) {
+            const key = localStorage.key(index);
+            if (key && key.startsWith(scope)) localStorage.removeItem(key);
+          }
+        } catch (err) {
+          // Ignore unavailable browser storage.
+        }
+      }
+
+      function eventRefreshStatusHtml() {
+        return `<div id="eventRefreshStatus" class="notice" role="status" hidden></div>`;
+      }
+
+      function setEventRefreshStatus(message, retry) {
+        const target = document.getElementById("eventRefreshStatus");
+        if (!target) return;
+        target.hidden = !message;
+        target.innerHTML = escapeHtml(message) + (retry
+          ? `<button type="button" onclick="retryEventLoad()">重新載入</button>` : "");
+      }
+
+      function retryEventLoad() {
+        return currentPage === "event" ? renderEvent(currentEventId) : renderEvents();
       }
 
       function applyEventFilters() {
@@ -807,19 +894,27 @@
       }
 
       function scheduleEventDetailPrefetch(events) {
+        cancelEventPrefetch();
         const candidates = sortEventsForDisplay(events || []).filter(event => {
           const parts = parseEventDateParts(event.dateText);
           const matchesYear = eventYearFilter === "all" || String(parts.year) === eventYearFilter;
           const matchesMonth = eventMonthFilter === "all" || String(parts.month) === eventMonthFilter;
           return matchesYear && matchesMonth;
-        }).slice(0, 2);
+        }).slice(0, 1);
 
-        candidates.forEach((event, index) => {
+        candidates.forEach(event => {
           if (readEventDetailCache(event.eventId)) return;
-          setTimeout(() => {
+          eventPrefetchTimer = setTimeout(() => {
+            eventPrefetchTimer = null;
+            if (currentPage !== "events" || readEventDetailCache(event.eventId)) return;
             requestEventPageData(event.eventId).catch(() => {});
-          }, 150 + index * 250);
+          }, 600);
         });
+      }
+
+      function cancelEventPrefetch() {
+        if (eventPrefetchTimer !== null) clearTimeout(eventPrefetchTimer);
+        eventPrefetchTimer = null;
       }
 
       function requestEventPageData(eventId) {
@@ -866,6 +961,9 @@
         const key = eventDetailCacheKey(eventId);
         if (!key || !data || !data.ok) return;
         try {
+          localStorage.setItem(eventCacheScope() + "preview:" + eventId, JSON.stringify({
+            savedAt: Date.now(), event: eventPreviewData(data.event)
+          }));
           localStorage.setItem(key, JSON.stringify({
             savedAt: Date.now(),
             data: data
@@ -886,8 +984,8 @@
       }
 
       function eventDetailCacheKey(eventId) {
-        if (!currentLineUserId || !eventId) return "";
-        return "club_event_detail_v5:" + APP_CONFIG.liffId + ":" + currentLineUserId + ":" + eventId;
+        const scope = eventCacheScope();
+        return scope && eventId ? scope + "detail:" + eventId : "";
       }
 
       function eventPageDataMatch(a, b) {
@@ -900,10 +998,12 @@
 
       async function renderEvent(eventId) {
         setTitle("活動詳情", true);
+        cancelEventPrefetch();
         currentEventId = eventId;
         const version = eventDetailVersions[eventId] || 0;
         const cached = readEventDetailCache(eventId);
-        const previewEvent = eventCatalog.find(event => String(event.eventId) === String(eventId)) || null;
+        const previewEvent = eventCatalog.find(event => String(event.eventId) === String(eventId)) ||
+          readEventPreview(eventId);
         if (cached) {
           renderEventPage(cached);
         } else if (previewEvent) {
@@ -911,24 +1011,38 @@
         } else {
           setView(`<div class="notice">載入活動中...</div>`);
         }
+        if (cached || previewEvent) setEventRefreshStatus("顯示上次活動資料，更新中...");
 
         let result;
         try {
           result = await requestEventPageData(eventId);
         } catch (err) {
-          if (version !== (eventDetailVersions[eventId] || 0)) return;
-          if (cached) return;
-          throw err;
+          if (version !== (eventDetailVersions[eventId] || 0) || currentPage !== "event" ||
+              String(currentEventId) !== String(eventId)) return;
+          if (cached || previewEvent) {
+            setEventRefreshStatus("暫時無法更新，以下為上次活動資料。", true);
+            if (!cached) {
+              const target = document.getElementById("eventDynamicContent");
+              if (target) target.innerHTML = `<div class="notice error">報名資料載入失敗，請重新載入。</div>`;
+            }
+            return;
+          }
+          renderError(errorText(err));
+          return;
         }
         if (version !== (eventDetailVersions[eventId] || 0) ||
-            String(currentEventId) !== String(eventId)) return;
+            currentPage !== "event" || String(currentEventId) !== String(eventId)) return;
         if (!result.ok) {
           clearEventDetailCache(eventId);
+          clearEventCache();
+          eventCatalog = [];
+          try { localStorage.removeItem(eventCacheScope() + "preview:" + eventId); } catch (err) {}
           renderNeedVerifyOrError(result);
           return;
         }
 
         currentMember = result.member;
+        setEventRefreshStatus("");
         if (cached && eventPageDataMatch(cached, result)) return;
         if ((cached && eventCatalogsMatch([cached.event], [result.event])) ||
             (!cached && previewEvent && eventCatalogsMatch([previewEvent], [result.event]))) {
@@ -959,6 +1073,7 @@
 
       function renderEventPreview(event) {
         setView(`
+          ${eventRefreshStatusHtml()}
           ${renderEventArticle(event)}
           <div id="eventDynamicContent">
             <div class="notice">正在載入報名資料...</div>
@@ -969,6 +1084,7 @@
       function renderEventPage(result) {
         currentMember = result.member;
         setView(`
+          ${eventRefreshStatusHtml()}
           ${renderEventArticle(result.event)}
           <div id="eventDynamicContent">${buildEventDynamicHtml(result)}</div>
         `);
@@ -1516,7 +1632,8 @@
         }
 
         const names = members
-          .map(member => member.name)
+          .map(member => member.name ? member.name +
+            (!isCommitteeMeeting && member.familyRegistered ? "(寶眷已報)" : "") : "")
           .filter(Boolean)
           .join("、");
 
@@ -1573,6 +1690,7 @@
 
       function renderNeedVerifyOrError(result) {
         if (result.code === "NOT_BOUND") {
+          clearAllEventCaches();
           setTitle("需要社友/寶眷驗證", false);
           setView(`
             <div class="notice warning">${escapeHtml(result.message)}</div>
@@ -1584,6 +1702,7 @@
       }
 
       function goVerify() {
+        cancelEventPrefetch();
         currentPage = "verify";
         currentEventId = "";
         history.replaceState(null, "", "?page=verify");
